@@ -1,0 +1,291 @@
+# API 呼叫程式碼範例
+
+> Dubai Hybrid Cloud · 公有雲文件中心
+> 路徑：模型即服務 MaaS › 附錄 › API 呼叫程式碼範例
+> 最後更新：2026-06-30
+
+---
+
+## 通用請求格式
+
+- **API 端點：** `https://api.zettabyte.com/v1/chat/completions`
+- **請求方式：** POST
+
+請求標頭：
+
+| 請求標頭 | 值 | 說明 |
+| --- | --- | --- |
+| Content-Type | application/json | 請求主體格式 |
+| Authorization | Bearer YOUR_API_KEY | APIKey 驗證 |
+
+請求主體參數：
+
+| 參數 | 類型 | 必填 | 說明 |
+| --- | --- | :---: | --- |
+| model | string | 是 | 模型名稱，如「gpt-4o」 |
+| messages | array | 是 | 對話訊息陣列，每條訊息包含 role（system／user／assistant）與 content（文字內容） |
+| temperature | number | 否 | 溫度參數，取值範圍 0–2，預設 0.7 |
+| top_p | number | 否 | 核心採樣參數，取值範圍 0–1，預設 1.0 |
+| max_tokens | integer | 否 | 最大輸出 Token 數，預設 2048 |
+| stream | boolean | 否 | 是否串流輸出，預設 false |
+
+回應主體格式（非串流）：
+
+```json
+{
+  "id": "chatcmpl-xxx",
+  "object": "chat.completion",
+  "created": 1700000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "模型回覆內容"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Python SDK 範例
+
+```python
+# 安裝：pip install openai
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="https://api.zettabyte.com/v1"
+)
+
+# 非串流呼叫
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "你是一個有幫助的助理。"},
+        {"role": "user", "content": "你好，請介紹一下自己。"}
+    ],
+    temperature=0.7,
+    max_tokens=2048
+)
+print(response.choices[0].message.content)
+print(f"Token 用量: {response.usage.total_tokens}")
+
+# 串流呼叫
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "寫一首關於春天的詩。"}
+    ],
+    temperature=0.8,
+    max_tokens=500,
+    stream=True
+)
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+```
+
+## Python requests 範例
+
+```python
+import requests
+import json
+
+API_KEY = "YOUR_API_KEY"
+BASE_URL = "https://api.zettabyte.com/v1"
+
+def chat_completion(model, messages, **kwargs):
+    """傳送對話請求"""
+    url = f"{BASE_URL}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "messages": messages,
+        **kwargs
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        return response.json()
+    elif response.status_code == 429:
+        print("速率限制，請稍後重試")
+        return None
+    else:
+        print(f"請求失敗: {response.status_code} - {response.text}")
+        return None
+
+# 使用範例
+result = chat_completion(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "什麼是機器學習？"}
+    ],
+    temperature=0.5,
+    max_tokens=1000
+)
+
+if result:
+    print(result["choices"][0]["message"]["content"])
+    print(f"Token 用量: {result['usage']['total_tokens']}")
+```
+
+## cURL 範例
+
+```bash
+# 設定環境變數
+export API_KEY="YOUR_API_KEY"
+export BASE_URL="https://api.zettabyte.com/v1"
+
+# 非串流請求
+curl -s "$BASE_URL/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $API_KEY" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "你是一個有幫助的助理。"},
+      {"role": "user", "content": "請解釋什麼是雲端運算？"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }' | python -m json.tool
+
+# 串流請求
+curl -N "$BASE_URL/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $API_KEY" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "寫一首五言絕句。"}
+    ],
+    "temperature": 0.8,
+    "max_tokens": 500,
+    "stream": true
+  }'
+```
+
+## Node.js 範例
+
+```javascript
+// 使用 fetch API（Node.js 18+）
+const API_KEY = "YOUR_API_KEY";
+const BASE_URL = "https://api.zettabyte.com/v1";
+
+async function chatCompletion(model, messages, options = {}) {
+  const url = `${BASE_URL}/chat/completions`;
+  const payload = {
+    model,
+    messages,
+    temperature: options.temperature ?? 0.7,
+    max_tokens: options.maxTokens ?? 2048,
+    stream: options.stream ?? false
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_KEY}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error(`請求失敗: ${response.status} - ${await response.text()}`);
+  }
+
+  return response.json();
+}
+
+// 使用範例
+(async () => {
+  try {
+    const result = await chatCompletion(
+      "gpt-4o",
+      [
+        { role: "system", content: "你是一個有幫助的助理。" },
+        { role: "user", content: "什麼是人工智慧？" }
+      ],
+      { temperature: 0.5, maxTokens: 500 }
+    );
+    console.log(result.choices[0].message.content);
+    console.log(`Token 用量: ${result.usage.total_tokens}`);
+  } catch (error) {
+    console.error(error.message);
+  }
+})();
+```
+
+## 錯誤處理最佳實踐
+
+```python
+import time
+import requests
+
+def call_with_retry(url, headers, payload, max_retries=3):
+    """帶重試機制的 API 呼叫"""
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 429:
+                # 速率限制，指數退避重試
+                wait_time = 2 ** attempt
+                print(f"速率限制，等待 {wait_time} 秒後重試...")
+                time.sleep(wait_time)
+                continue
+            elif response.status_code in [500, 502, 503]:
+                # 伺服器錯誤，退避重試
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    print(f"伺服器錯誤 {response.status_code}，等待 {wait_time} 秒後重試...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise Exception(f"伺服器錯誤: {response.status_code}")
+            else:
+                raise Exception(f"請求失敗: {response.status_code} - {response.text}")
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt
+                print(f"網路錯誤，等待 {wait_time} 秒後重試...")
+                time.sleep(wait_time)
+                continue
+            else:
+                raise e
+
+    raise Exception("達到最大重試次數")
+
+# 使用範例
+url = "https://api.zettabyte.com/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+payload = {
+    "model": "gpt-4o",
+    "messages": [{"role": "user", "content": "Hello!"}]
+}
+
+try:
+    result = call_with_retry(url, headers, payload)
+    print(result["choices"][0]["message"]["content"])
+except Exception as e:
+    print(f"呼叫失敗: {e}")
+```

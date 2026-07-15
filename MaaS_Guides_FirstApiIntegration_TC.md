@@ -1,0 +1,186 @@
+# 場景一：開發者首次介接 MaaS 平台 API
+
+> Dubai Hybrid Cloud · 公有雲文件中心
+> 路徑：模型即服務 MaaS › 操作指南 › 場景一：開發者首次介接 MaaS 平台 API
+> 最後更新：2026-06-30
+
+---
+
+**目標：** 作為開發者，完成從瀏覽模型到呼叫 API 的完整串接流程。
+
+**前置條件：** 已擁有 開發者／演算法使用者 角色帳號，已登入平台。
+
+**操作步驟**
+
+**步驟一：瀏覽並選擇模型**
+
+1. 進入「模型市場」頁面
+2. 使用搜尋框輸入關鍵字（如「對話」）或透過類型篩選找到合適的模型
+3. 點選感興趣的模型卡片，進入模型詳情頁
+4. 在「總覽」標籤頁查看模型能力介紹
+5. 在「定價」標籤頁了解費用標準
+6. 在「API 文件」標籤頁查看 API 端點 URL 與參數說明
+
+**步驟二：線上體驗模型效果**
+
+1. 在模型詳情頁點選「線上體驗」標籤頁，或直接點選「立即體驗」按鈕
+2. 選擇一個可用的 APIKey（如沒有，先執行步驟三建立）
+3. 調整推理參數（Temperature、最大 Token 等，詳見 3.2.3）
+4. 輸入測試訊息，觀察模型回覆效果
+5. 確認模型效果滿足需求後，點選「複製程式碼」取得呼叫程式碼
+
+**步驟三：建立 APIKey**
+
+1. 進入「APIKey」頁面，點選「建立 APIKey」
+2. 輸入名稱（如「我的應用-生產環境」）
+3. 點選「確定」
+4. 立即複製並儲存金鑰
+
+**步驟四：整合 API 呼叫**
+
+以下為完整的 API 呼叫程式碼範例。
+
+Python 範例（使用 OpenAI 相容 SDK）：
+
+```python
+from openai import OpenAI
+
+# 初始化用戶端，指向 MaaS 平台 API 端點
+client = OpenAI(
+    api_key="YOUR_API_KEY",  # 替換為您的 APIKey
+    base_url="https://api.zettabyte.com/v1"  # 替換為實際的平台 API 端點
+)
+
+# 發起對話請求
+response = client.chat.completions.create(
+    model="gpt-4o",  # 替換為實際模型名稱
+    messages=[
+        {"role": "system", "content": "你是一個有幫助的助理。"},
+        {"role": "user", "content": "請用一句話介紹人工智慧。"}
+    ],
+    temperature=0.7,
+    max_tokens=2048,
+    stream=True  # 串流輸出
+)
+
+# 處理串流回應
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+print()
+```
+
+Python 範例（使用 requests 函式庫）：
+
+```python
+import requests
+import json
+
+url = "https://api.zettabyte.com/v1/chat/completions"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+payload = {
+    "model": "gpt-4o",
+    "messages": [
+        {"role": "system", "content": "你是一個有幫助的助理。"},
+        {"role": "user", "content": "請用一句話介紹人工智慧。"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 2048
+}
+
+# 非串流請求
+response = requests.post(url, headers=headers, json=payload)
+if response.status_code == 200:
+    result = response.json()
+    print(result["choices"][0]["message"]["content"])
+else:
+    print(f"請求失敗: {response.status_code} - {response.text}")
+
+# 串流請求
+payload["stream"] = True
+response = requests.post(url, headers=headers, json=payload, stream=True)
+for line in response.iter_lines():
+    if line:
+        line = line.decode("utf-8")
+        if line.startswith("data: "):
+            data = line[6:]
+            if data != "[DONE]":
+                chunk = json.loads(data)
+                if chunk["choices"][0]["delta"].get("content"):
+                    print(chunk["choices"][0]["delta"]["content"], end="", flush=True)
+print()
+```
+
+cURL 範例：
+
+```bash
+# 非串流請求
+curl https://api.zettabyte.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "你是一個有幫助的助理。"},
+      {"role": "user", "content": "請用一句話介紹人工智慧。"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }'
+
+# 串流請求
+curl https://api.zettabyte.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "你是一個有幫助的助理。"},
+      {"role": "user", "content": "請用一句話介紹人工智慧。"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 2048,
+    "stream": true
+  }'
+```
+
+Node.js 範例：
+
+```javascript
+// 使用 fetch API（Node.js 18+）
+const url = "https://api.zettabyte.com/v1/chat/completions";
+
+const payload = {
+  model: "gpt-4o",
+  messages: [
+    { role: "system", content: "你是一個有幫助的助理。" },
+    { role: "user", content: "請用一句話介紹人工智慧。" }
+  ],
+  temperature: 0.7,
+  max_tokens: 2048
+};
+
+const response = await fetch(url, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer YOUR_API_KEY"
+  },
+  body: JSON.stringify(payload)
+});
+
+const data = await response.json();
+console.log(data.choices[0].message.content);
+```
+
+**步驟五：監控用量**
+
+1. 進入「用量」頁面
+2. 查看 Token 消耗趨勢與 API 呼叫次數
+3. 切換到「即時明細」標籤頁，依 APIKey 篩選查看詳細呼叫記錄
+4. 定期匯出 CSV 資料進行歸檔分析
+
+> **完成標誌：** API 呼叫成功回傳模型回覆，用量頁面可看到呼叫記錄。
