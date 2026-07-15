@@ -1,0 +1,85 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "MaaS 使用者操作手冊",
+  "colors": {
+    "primary": "#2563EB",
+    "light": "#60A5FA",
+    "dark": "#1D4ED8"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "開始",
+        "pages": [
+          "maas/index"
+        ]
+      },
+      {
+        "group": "產品概述",
+        "pages": [
+          "maas/product-overview/overview"
+        ]
+      },
+      {
+        "group": "快速入門",
+        "pages": [
+          "maas/quick-start/getting-started"
+        ]
+      },
+      {
+        "group": "功能詳解",
+        "pages": [
+          "maas/features/model-marketplace",
+          "maas/features/playground",
+          "maas/features/api-key-management",
+          "maas/features/usage",
+          "maas/features/budget-alerts",
+          "maas/features/billing",
+          "maas/features/account-settings"
+        ]
+      },
+      {
+        "group": "操作指南",
+        "pages": [
+          "maas/guides/first-api-integration",
+          "maas/guides/budget-control",
+          "maas/guides/tuning-in-playground",
+          "maas/guides/multi-api-key-management"
+        ]
+      },
+      {
+        "group": "常見問題",
+        "pages": [
+          "maas/faq"
+        ]
+      },
+      {
+        "group": "附錄",
+        "pages": [
+          "maas/appendix/glossary",
+          "maas/appendix/error-codes",
+          "maas/appendix/rate-limit-tiers",
+          "maas/appendix/code-examples"
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "登入平台",
+      "href": "https://api.zettabyte.com"
+    }
+  },
+  "footer": {
+    "socials": {
+      "website": "https://www.zettabyte.com"
+    }
+  }
+}
